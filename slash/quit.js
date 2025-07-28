@@ -1,16 +1,18 @@
-const { slashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    data: new slashCommandBuilder()
+    data: new SlashCommandBuilder()
         .setName('quit')
         .setDescription('Stops the bot and clears the queue'),
     run: async({client, interaction}) => {
-        const queue = client.player.getQueue(Interaction.guildId);
+        await interaction.deferReply();
+        
+        const queue = client.player.nodes.get(interaction.guildId);
 
         if(!queue) 
             return await interaction.editReply("There is no queue");
 
-            queue.destroy();
-            await interaction.editReply("Bye bye!");
+        queue.delete();
+        await interaction.editReply("Bye bye!");
     }
 }

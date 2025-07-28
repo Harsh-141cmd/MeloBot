@@ -1,29 +1,30 @@
-const { slashCommandBuilder } = require('@discordjs/builders');
-const { MessageEmbed } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
-    data: new slashCommandBuilder()
+    data: new SlashCommandBuilder()
         .setName('info')
         .setDescription('Displays info about the current song'),
     run: async({client, interaction}) => {
-        const queue = client.player.getQueue(Interaction.guildId);
+        await interaction.deferReply();
+        
+        const queue = client.player.nodes.get(interaction.guildId);
 
         if(!queue) 
             return await interaction.editReply("There is no queue");
 
-            let bar = quque.createProgressBar({
-                queue: false,
-                length: 19,
+        let bar = queue.node.createProgressBar({
+            queue: false,
+            length: 19,
+        });
 
-            })
+        const song = queue.currentTrack;
 
-            const song = queue.current;
-
-            await interaction.editReply({
-                embed: [new MessageEmbed()
+        await interaction.editReply({
+            embeds: [new EmbedBuilder()
                 .setThumbnail(song.thumbnail)
-                .setDescription('**Currently Playing[${song.title}](${song.url})\n\n' + bar)
+                .setDescription(`**Currently Playing [${song.title}](${song.url})**\n\n${bar}`)
             ],
-            });
+        });
     }
 }

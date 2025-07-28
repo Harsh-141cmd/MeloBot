@@ -1,8 +1,8 @@
-const { slashCommandBuilder } = require('@discordjs/builders');
-const { MessageEmbed } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder } = require('discord.js');
 
 module.exports = {
-    data: new slashCommandBuilder()
+    data: new SlashCommandBuilder()
         .setName('queue')
         .setDescription('View the queue')
         .addNumberOption(option =>
@@ -12,33 +12,34 @@ module.exports = {
         ),
 
     run: async({client, interaction}) => {
-        const queue = client.player.getQueue(interaction.guildId);
-        if(!queue || !queue.playing) {
+        await interaction.deferReply();
+        
+        const queue = client.player.nodes.get(interaction.guildId);
+        if(!queue || !queue.node.isPlaying()) {
             return interaction.editReply("There are no songs in the queue");
         }
-        const totalPages = Math.ceil(queue.tracks.length / 10) || 1;
+        const totalPages = Math.ceil(queue.tracks.size / 10) || 1;
         const page = (interaction.options.getNumber('page') || 1) - 1;
 
         if(page > totalPages) {
-            return await interaction.editReply(`Invalid Page, There are only ${totalPages} pages in the somgs`);
+            return await interaction.editReply(`Invalid Page, There are only ${totalPages} pages of songs`);
         }
 
-        const queueString = queue.tracks.slice(page * 10, page * 10 + 10).map((song, i) => {
-            return '**${page * 10 + i + 1}. \'[${song.duration}]\' ${song.title} -- <@${song.requestedBy.id}>**';
+        const queueString = queue.tracks.toArray().slice(page * 10, page * 10 + 10).map((song, i) => {
+            return `**${page * 10 + i + 1}. \`[${song.duration}]\` ${song.title} -- <@${song.requestedBy.id}>**`;
         }).join("\n");
 
-        const currentSong = queue.current;
+        const currentSong = queue.currentTrack;
         await interaction.editReply({
             embeds: [
-                new MessageEmbed()
-                    .setDescription('**Currently Playing**\n') +
-                    (currentSong ? '\'[${currentsong.duration}]\' ${currentSong.title} -- <@${currentSong.requestedBy.id}>' : 'Nothing') +
-                    '\n\n**Queue**\n${queueString}' 
-                    
+                new EmbedBuilder()
+                    .setDescription(`**Currently Playing**\n` + 
+                    (currentSong ? `\`[${currentSong.duration}]\` ${currentSong.title} -- <@${currentSong.requestedBy.id}>` : 'Nothing') +
+                    `\n\n**Queue**\n${queueString}`)
                     .setFooter({
-                        text: 'Page ${page + 1} / ${totalPages}'
+                        text: `Page ${page + 1} / ${totalPages}`
                     })
-                    .setThumbnail(currentSong.thumbnail)
+                    .setThumbnail(currentSong ? currentSong.thumbnail : null)
             ]
         })
     }

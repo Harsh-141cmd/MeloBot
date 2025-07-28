@@ -1,16 +1,18 @@
-const { slashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    data: new slashCommandBuilder()
+    data: new SlashCommandBuilder()
         .setName('shuffle')
         .setDescription('Shuffles the queue'),
     run: async({client, interaction}) => {
-        const queue = client.player.getQueue(Interaction.guildId);
+        await interaction.deferReply();
+        
+        const queue = client.player.nodes.get(interaction.guildId);
 
         if(!queue) 
             return await interaction.editReply("There is no queue");
 
-            queue.shuffle();
-            await interaction.editReply("Queue of ${queue.tracks.length} has been shuffled!");
+        queue.tracks.shuffle();
+        await interaction.editReply(`Queue of ${queue.tracks.size} songs has been shuffled!`);
     }
 }
